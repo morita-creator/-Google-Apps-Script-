@@ -173,18 +173,76 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--ivory);color:var(--i
 .gc input[type=date]:focus{border-color:var(--gold);}
 .gantt-outer{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .gantt-scroll{overflow-x:auto;}
-.gt{border-collapse:collapse;width:100%;min-width:600px;}
-.gt th{background:var(--ink);color:rgba(255,255,255,.65);font-size:.63rem;font-weight:500;padding:7px 5px;text-align:center;border-right:1px solid rgba(255,255,255,.08);white-space:nowrap;}
-.gt th.tth{text-align:left;padding-left:12px;min-width:200px;border-right:2px solid var(--gold);}
-.gt td{border-right:1px solid #f0ece4;border-bottom:1px solid #f0ece4;padding:0;height:32px;position:relative;}
-.gt td.ttd{padding:0 9px;font-size:.72rem;border-right:2px solid var(--border);white-space:nowrap;vertical-align:middle;}
-.gt tr:hover td{background:var(--gold-pale);}
-.gt tr.pr td{background:#f4f0e8;}
-.gt tr.mr td{background:#faf8f2;}
-.gbar{position:absolute;top:7px;height:17px;border-radius:3px;z-index:2;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;padding-left:4px;font-size:.56rem;color:#fff;font-weight:700;overflow:hidden;}
-.gbar:hover{opacity:.78;}
-.gdm{width:11px;height:11px;transform:rotate(45deg);background:var(--gold);position:absolute;top:10px;z-index:3;cursor:pointer;}
+/* ===== 新ガントレイアウト ===== */
+.gntt{width:100%;min-width:700px;border-collapse:collapse;}
+.gntt-head{display:flex;background:var(--ink);border-bottom:2px solid var(--gold);}
+.gntt-label-col{width:200px;min-width:200px;flex-shrink:0;padding:8px 12px;font-size:.63rem;color:rgba(255,255,255,.65);font-weight:500;border-right:2px solid var(--gold);}
+.gntt-months{flex:1;display:flex;overflow:hidden;}
+.gntt-month{flex:1;padding:8px 4px;font-size:.63rem;color:rgba(255,255,255,.65);font-weight:500;text-align:center;border-right:1px solid rgba(255,255,255,.08);}
+.gntt-row{display:flex;border-bottom:1px solid #f0ece4;min-height:36px;align-items:stretch;}
+.gntt-row:hover{background:var(--gold-pale);}
+.gntt-row.phase-row{background:#f4f0e8;min-height:40px;}
+.gntt-row.ms-row{background:#faf8f2;min-height:28px;}
+.gntt-name{width:200px;min-width:200px;flex-shrink:0;padding:0 10px;font-size:.72rem;border-right:2px solid var(--border);display:flex;align-items:center;white-space:nowrap;overflow:hidden;}
+.gntt-timeline{flex:1;position:relative;overflow:visible;}
+.gntt-grid{position:absolute;top:0;bottom:0;pointer-events:none;display:flex;width:100%;}
+.gntt-grid-col{flex:1;border-right:1px solid #f0ece4;}
+.gntt-today{position:absolute;top:0;bottom:0;width:2px;background:rgba(192,57,43,.35);z-index:1;pointer-events:none;}
+/* 1本バー */
+.gbar2{position:absolute;top:8px;height:22px;border-radius:4px;z-index:2;cursor:grab;user-select:none;display:flex;align-items:center;padding:0 10px 0 8px;font-size:.62rem;color:#fff;font-weight:700;white-space:nowrap;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:filter .1s;}
+.gbar2:hover{filter:brightness(1.12);}
+.gbar2:active{cursor:grabbing;}
+.gbar2-rl,.gbar2-rr{position:absolute;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:4;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
+.gbar2-rl{left:0;border-radius:4px 0 0 4px;}
+.gbar2-rr{right:0;border-radius:0 4px 4px 0;}
+.gbar2:hover .gbar2-rl,.gbar2:hover .gbar2-rr{opacity:1;}
+.gbar2-rl::after,.gbar2-rr::after{content:'';display:block;width:3px;height:12px;background:rgba(255,255,255,.7);border-radius:2px;}
+.gdm2{width:12px;height:12px;transform:rotate(45deg);background:var(--gold);position:absolute;top:8px;z-index:3;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.gdm2:hover{background:var(--alert);}
+/* タスクポップアップ */
+.task-popup{position:fixed;z-index:500;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.2);padding:14px 16px;min-width:300px;max-width:380px;}
+.task-popup-title{font-size:.78rem;font-weight:700;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid var(--gold);display:flex;justify-content:space-between;align-items:center;}
+.task-popup-close{cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:2px 4px;}
+.task-popup-close:hover{color:var(--alert);}
+.task-popup-dates{display:flex;gap:10px;margin-bottom:10px;padding:7px 10px;background:#f8f4ee;border-radius:5px;font-size:.7rem;}
+.task-popup-date-field{display:flex;flex-direction:column;gap:2px;}
+.task-popup-date-label{font-size:.62rem;color:var(--muted);font-weight:700;}
+.task-popup-date-input{border:none;border-bottom:1px solid var(--border);background:transparent;font-size:.75rem;font-family:'BIZ UDGothic',sans-serif;outline:none;width:118px;}
+.task-popup-date-input:focus{border-bottom-color:var(--gold);}
+.task-popup-apply{padding:4px 12px;font-size:.68rem;margin-top:4px;}
+.task-popup-item{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #f5f0e8;font-size:.72rem;}
+.task-popup-item:last-child{border-bottom:none;}
+.task-popup-chk{width:14px;height:14px;border:2px solid var(--border);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;}
+.task-popup-chk.on{background:var(--ok);border-color:var(--ok);color:#fff;}
+.task-popup-st{font-size:.62rem;padding:1px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;}
+.task-popup-st.done{background:#eafaf1;color:var(--ok);}
+.task-popup-st.inprogress{background:#fef9e7;color:var(--pending);}
+.task-popup-st.notstarted{background:#f5f5f5;color:#999;}
+.task-popup-st.waiting{background:#eaf2fb;color:var(--phase1);}
+.gbar{position:absolute;top:5px;height:22px;border-radius:4px;z-index:2;cursor:grab;user-select:none;display:flex;align-items:center;padding:0 8px 0 6px;font-size:.58rem;color:#fff;font-weight:700;overflow:visible;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.gbar:active{cursor:grabbing;}
+.gbar:hover{filter:brightness(1.1);}
+.gbar-label{pointer-events:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:90%;}
+.gbar-resize-l,.gbar-resize-r{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:4;opacity:0;background:rgba(255,255,255,.3);border-radius:2px;}
+.gbar-resize-l{left:0;border-radius:4px 0 0 4px;}
+.gbar-resize-r{right:0;border-radius:0 4px 4px 0;}
+.gbar:hover .gbar-resize-l,.gbar:hover .gbar-resize-r{opacity:1;}
+.gdm{width:12px;height:12px;transform:rotate(45deg);background:var(--gold);position:absolute;top:9px;z-index:3;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3);}
 .gdm:hover{background:var(--alert);}
+/* タスクポップアップ */
+.task-popup{position:fixed;z-index:500;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.2);padding:14px 16px;min-width:280px;max-width:360px;}
+.task-popup-title{font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid var(--gold);display:flex;justify-content:space-between;align-items:center;}
+.task-popup-close{cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;}
+.task-popup-close:hover{color:var(--alert);}
+.task-popup-item{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #f5f0e8;font-size:.72rem;}
+.task-popup-item:last-child{border-bottom:none;}
+.task-popup-chk{width:14px;height:14px;border:2px solid var(--border);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;}
+.task-popup-chk.on{background:var(--ok);border-color:var(--ok);color:#fff;}
+.task-popup-st{font-size:.62rem;padding:1px 6px;border-radius:10px;white-space:nowrap;}
+.task-popup-st.done{background:#eafaf1;color:var(--ok);}
+.task-popup-st.inprogress{background:#fef9e7;color:var(--pending);}
+.task-popup-st.notstarted{background:#f5f5f5;color:#999;}
+.task-popup-st.waiting{background:#eaf2fb;color:var(--phase1);}
 .bar-editor{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:9px;display:none;}
 .be-title{font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:7px;}
 .be-row{display:flex;gap:13px;flex-wrap:wrap;align-items:center;}
@@ -714,6 +772,9 @@ async function openCase(id){
   }
   currentCaseId = id;
 
+  // 案件切替時に必ずフォームを全クリア（メモ含む）
+  resetCaseForm();
+
   // ローカルキャッシュから基本情報を即時表示
   const cached = cases.find(c=>c['案件ID']===id);
   if(cached) applyCaseData(cached, null);
@@ -776,10 +837,10 @@ function applyCaseData(caseRow, tasks){
   // ガントバー
   try { if(caseRow['ガントバー']) gBars = JSON.parse(caseRow['ガントバー']); } catch(e){ gBars={}; }
 
-  // メモ
+  // メモ（空文字でも必ずセットして前案件の内容をクリア）
   ['メモ1','メモ2','メモ3','メモ4','メモ5','メモ6'].forEach((k,i)=>{
     const el=document.getElementById('nt'+(i+1));
-    if(el && caseRow[k]) el.value=caseRow[k];
+    if(el) el.value=caseRow[k]||'';
   });
 
   // タスク進捗
@@ -816,7 +877,9 @@ function applyLocalData(d){
   }
   if(d.gBars) gBars=d.gBars;
   if(d.tState) tState=d.tState; else initTState();
-  if(d.notes) d.notes.forEach((n,i)=>{const e=document.getElementById('nt'+(i+1));if(e)e.value=n;});
+  // メモは必ずクリアしてからセット（前案件の内容が残らないように）
+  [1,2,3,4,5,6].forEach(i=>{const e=document.getElementById('nt'+i);if(e)e.value='';});
+  if(d.notes) d.notes.forEach((n,i)=>{const e=document.getElementById('nt'+(i+1));if(e)e.value=n||'';});
   updH(); calcDL(); calcTax();
   renderProg(); renderCL();
   if(!document.getElementById('gStart').value) ganttToDeadline();
@@ -888,46 +951,43 @@ async function syncSave(){
   if(!currentCaseId){ alert('案件を選択または新規作成してください'); return; }
   const payload = buildPayload();
 
-  // ローカルに常に保存
+  // ローカルに常に保存（即時）
   localStorage.setItem('case_'+currentCaseId, JSON.stringify(payload));
 
-  // GASに送信
+  // ローカルキャッシュの案件一覧も即時更新（通信待ちなし）
+  const entry = {
+    '案件ID': currentCaseId,
+    '被相続人': payload.decedent,
+    '相続開始日': payload.deathDate,
+    '申告期限': calcDeadlineStr(payload.deathDate),
+    '担当税理士': payload.staffName,
+    '進捗(%)': calcProgress(),
+  };
+  const existing = cases.findIndex(c=>c['案件ID']===currentCaseId);
+  if(existing>=0) cases[existing]=entry; else cases.push(entry);
+  localStorage.setItem('cases_cache', JSON.stringify(cases));
+  isDirty=false; updateDirtyDisp();
+  renderCaseList(); // チップを即時更新
+
+  // GASに非同期送信（バックグラウンド）
   if(gasUrl){
-    setSyncStatus('ing','保存中...');
+    setSyncStatus('ing','同期中...');
     const btn = document.getElementById('saveBtn');
-    btn.textContent = '⏳ 保存中...';
+    btn.textContent = '⏳ 同期中...';
     try {
-      const result = await gasFetch('saveCase', {data: JSON.stringify(payload)});
-      // 案件一覧を更新
-      await loadCases();
+      await gasFetch('saveCase', {data: JSON.stringify(payload)});
+      // loadCasesは呼ばない → 通信1回で完結
       setSyncStatus('ok','同期済み');
       btn.textContent = '✓ 保存完了';
       setTimeout(()=>btn.textContent='☁ 保存・同期',1500);
-      isDirty = false;
-      updateDirtyDisp();
     } catch(e){
-      setSyncStatus('err','保存失敗: '+e.message);
+      setSyncStatus('err','同期失敗: '+e.message);
       btn.textContent = '☁ 保存・同期';
     }
   } else {
-    // ローカルのみ
     const btn = document.getElementById('saveBtn');
     btn.textContent = '✓ ローカル保存';
     setTimeout(()=>btn.textContent='☁ 保存・同期',1500);
-    // ローカルキャッシュの案件一覧も更新
-    const existing = cases.findIndex(c=>c['案件ID']===currentCaseId);
-    const entry = {
-      '案件ID': currentCaseId,
-      '被相続人': payload.decedent,
-      '相続開始日': payload.deathDate,
-      '申告期限': calcDeadlineStr(payload.deathDate),
-      '担当税理士': payload.staffName,
-      '進捗(%)': calcProgress(),
-    };
-    if(existing>=0) cases[existing]=entry; else cases.push(entry);
-    localStorage.setItem('cases_cache', JSON.stringify(cases));
-    isDirty=false; updateDirtyDisp();
-    renderCaseList();
   }
 }
 
@@ -939,7 +999,7 @@ function buildPayload(){
     acceptDate: document.getElementById('acceptDate').value,
     staffName: document.getElementById('staffName').value,
     estVal: document.getElementById('estVal').value,
-    heirCnt: document.getElementById('heirCnt').value,
+    heirCnt: (()=>{updH();return document.getElementById('heirCnt').value;})(),
     totalTax: document.getElementById('totalTax').value,
     sp, nChild: +document.getElementById('n-child').value||0,
     nParent: +document.getElementById('n-parent').value||0,
@@ -1164,40 +1224,242 @@ function ganttToDeadline(){
   updateWC();renderGantt();
 }
 
+// =============================================
+// GANTT RENDER v2 (1本バー・横スクロール・ドラッグ)
+// =============================================
+let dragState = null;
+
 function renderGantt(){
   const sStr=document.getElementById('gStart').value,eStr=document.getElementById('gEnd').value;
   if(!sStr||!eStr)return;
   const vS=new Date(sStr),vE=new Date(eStr);
   if(vE<=vS)return;
   const tms=vE-vS,today=new Date();
+
+  // 月カラム配列
   const months=[];
   const cur=new Date(vS.getFullYear(),vS.getMonth(),1);
   while(cur<=vE){months.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
-  let html=`<table class="gt"><thead><tr><th class="tth">フェーズ</th>${months.map(m=>`<th>${m.getFullYear()}.${String(m.getMonth()+1).padStart(2,'0')}</th>`).join('')}</tr></thead><tbody>`;
+  const nMonths=months.length;
+
+  // 全体に対する位置を%で返す
+  const pct=(dt)=>Math.max(0,Math.min(100,((new Date(dt)-vS)/tms)*100));
+  const todayPct=pct(today);
+
+  let html='<div class="gntt-head">'
+    +'<div class="gntt-label-col">フェーズ</div>'
+    +'<div class="gntt-months">'
+    +months.map(m=>`<div class="gntt-month">${m.getFullYear()}.${String(m.getMonth()+1).padStart(2,'0')}</div>`).join('')
+    +'</div></div>';
+
   phases.forEach(p=>{
     const bar=gBars[p.id]||{s:sStr,e:eStr};
     const bS=new Date(bar.s),bE=new Date(bar.e);
     const done=p.tasks.filter(t=>tState[t.id]&&tState[t.id].chk).length;
-    const pct=Math.round((done/p.tasks.length)*100);
-    html+=`<tr class="pr"><td class="ttd" style="color:${p.color};font-weight:700;">Phase ${p.id} — ${p.name} <span style="font-size:.6rem;color:var(--muted);margin-left:4px;">${pct}%</span></td>
-      ${months.map(m=>{
-        const mS=new Date(m.getFullYear(),m.getMonth(),1),mE=new Date(m.getFullYear(),m.getMonth()+1,0,23,59,59);
-        const overlap=bS<=mE&&bE>=mS;
-        const todayIn=today>=mS&&today<=mE;
-        const tPct=((today-mS)/(mE-mS+1))*100;
-        const bL=Math.max(0,Math.min(100,((Math.max(bS,mS)-mS)/(mE-mS+1))*100));
-        const bR=Math.max(0,Math.min(100,((Math.min(bE,mE)-mS)/(mE-mS+1))*100));
-        return`<td style="position:relative;">${overlap?`<div class="gbar" style="left:${bL}%;width:${bR-bL}%;background:${p.color};" onclick="openBar(${p.id})" title="クリックして期間を編集"></div>`:''} ${todayIn?`<div style="position:absolute;top:0;bottom:0;left:${tPct}%;width:2px;background:rgba(192,57,43,.35);z-index:5;pointer-events:none;"></div>`:''}</td>`;
-      }).join('')}</tr>`;
-    html+=`<tr class="mr"><td class="ttd" style="font-size:.66rem;color:var(--muted);">✦ Phase ${p.id} 完了目安 : ${bar.e}</td>
-      ${months.map(m=>{
-        const mS=new Date(m.getFullYear(),m.getMonth(),1),mE=new Date(m.getFullYear(),m.getMonth()+1,0,23,59,59);
-        const inM=bE>=mS&&bE<=mE;const mpct=inM?((bE-mS)/(mE-mS+1))*100:0;
-        return`<td style="position:relative;">${inM?`<div class="gdm" style="left:${mpct}%;margin-left:-5px;"></div>`:''}</td>`;
-      }).join('')}</tr>`;
+    const pctVal=Math.round((done/p.tasks.length)*100);
+    const barLeft=pct(bS), barW=Math.max(0.5,pct(bE)-pct(bS));
+
+    // グリッド線HTML
+    const gridCols=months.map(()=>'<div class="gntt-grid-col"></div>').join('');
+
+    // フェーズ行（1本バー）
+    html+=`<div class="gntt-row phase-row">
+      <div class="gntt-name" style="color:${p.color};font-weight:700;">
+        Phase ${p.id}<br>
+        <span style="font-size:.68rem;">${p.name}</span>
+        <span style="font-size:.58rem;color:var(--muted);margin-left:4px;">${pctVal}%</span>
+      </div>
+      <div class="gntt-timeline" id="gtl-${p.id}" data-pid="${p.id}" style="min-height:40px;">
+        <div class="gntt-grid">${gridCols}</div>
+        <div class="gntt-today" style="left:${todayPct}%"></div>
+        <div class="gbar2"
+          style="left:${barLeft}%;width:${barW}%;background:${p.color};"
+          data-pid="${p.id}" data-drag="move"
+          id="gbar2-${p.id}">
+          <div class="gbar2-rl" data-pid="${p.id}" data-drag="resizeL"></div>
+          <span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis;">${p.name}</span>
+          <div class="gbar2-rr" data-pid="${p.id}" data-drag="resizeR"></div>
+        </div>
+      </div>
+    </div>`;
+
+    // マイルストーン行
+    const msLeft=pct(bE);
+    html+=`<div class="gntt-row ms-row">
+      <div class="gntt-name" style="font-size:.64rem;color:var(--muted);">
+        ✦ 完了目安: ${bar.e}
+      </div>
+      <div class="gntt-timeline" style="min-height:28px;">
+        <div class="gntt-grid">${gridCols}</div>
+        <div class="gdm2" style="left:calc(${msLeft}% - 6px);"
+          onclick="showTaskPopup(event,${p.id})" title="タスク一覧・期間編集"></div>
+      </div>
+    </div>`;
   });
-  html+='</tbody></table>';
+
   document.getElementById('ganttCont').innerHTML=html;
+  setupGanttDrag();
+}
+
+// =============================================
+// タスクポップアップ（期間編集フォーム付き）
+// =============================================
+function showTaskPopup(e, pid){
+  e.stopPropagation();
+  closeTaskPopup();
+  const p=phases.find(x=>x.id===pid);
+  if(!p)return;
+  const bar=gBars[pid]||{s:'',e:''};
+  const stMap={notstarted:'未着手',inprogress:'進行中',waiting:'待ち',done:'完了'};
+  const stCls={notstarted:'notstarted',inprogress:'inprogress',waiting:'waiting',done:'done'};
+  const prLabel={high:'🔴',med:'🟡',low:'⚪'};
+
+  const popup=document.createElement('div');
+  popup.className='task-popup';
+  popup.id='taskPopup';
+  popup.innerHTML=`
+    <div class="task-popup-title">
+      <span style="color:${p.color}">Phase ${p.id} — ${p.name}</span>
+      <span class="task-popup-close" onclick="closeTaskPopup()">✕</span>
+    </div>
+    <div class="task-popup-dates">
+      <div class="task-popup-date-field">
+        <span class="task-popup-date-label">開始日</span>
+        <input type="date" class="task-popup-date-input" id="popupS" value="${bar.s}">
+      </div>
+      <div class="task-popup-date-field">
+        <span class="task-popup-date-label">終了日</span>
+        <input type="date" class="task-popup-date-input" id="popupE" value="${bar.e}">
+      </div>
+      <button class="btn btn-gold task-popup-apply" onclick="applyPopupDate(${pid})">更新</button>
+    </div>
+    ${p.tasks.map(t=>{
+      const s=tState[t.id]||{chk:false,st:'notstarted'};
+      return`<div class="task-popup-item">
+        <div class="task-popup-chk ${s.chk?'on':''}">${s.chk?'✓':''}</div>
+        <span style="flex:1">${prLabel[t.pr]||''} ${t.name}</span>
+        <span class="task-popup-st ${stCls[s.st]||'notstarted'}">${stMap[s.st]||'未着手'}</span>
+      </div>`;
+    }).join('')}
+  `;
+
+  document.body.appendChild(popup);
+  const rect=e.target.getBoundingClientRect();
+  let top=rect.bottom+window.scrollY+8;
+  let left=rect.left+window.scrollX-120;
+  left=Math.max(8,Math.min(left,window.innerWidth-390));
+  if(top+400>window.scrollY+window.innerHeight) top=rect.top+window.scrollY-420;
+  popup.style.top=top+'px';
+  popup.style.left=left+'px';
+
+  setTimeout(()=>document.addEventListener('click',onPopupOutside),10);
+}
+
+function onPopupOutside(e){
+  const popup=document.getElementById('taskPopup');
+  if(popup&&!popup.contains(e.target)){
+    closeTaskPopup();
+  } else {
+    document.addEventListener('click',onPopupOutside,{once:true});
+  }
+}
+
+function applyPopupDate(pid){
+  const s=document.getElementById('popupS')?.value;
+  const e2=document.getElementById('popupE')?.value;
+  if(!s||!e2)return;
+  gBars[pid]={s,e:e2};
+  markDirty();
+  closeTaskPopup();
+  renderGantt();
+}
+
+function closeTaskPopup(){
+  const p=document.getElementById('taskPopup');
+  if(p)p.remove();
+  document.removeEventListener('click',onPopupOutside);
+}
+
+// =============================================
+// ドラッグ操作
+// =============================================
+function setupGanttDrag(){
+  const container=document.getElementById('ganttCont');
+  if(!container)return;
+  container.removeEventListener('mousedown',onGanttMouseDown);
+  container.addEventListener('mousedown',onGanttMouseDown);
+}
+
+function onGanttMouseDown(e){
+  const el=e.target.closest('[data-drag]');
+  if(!el)return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const pid=parseInt(el.dataset.pid);
+  const dragType=el.dataset.drag;
+  const sStr=document.getElementById('gStart').value;
+  const eStr=document.getElementById('gEnd').value;
+  const vS=new Date(sStr),vE=new Date(eStr);
+  const tms=vE-vS;
+
+  const bar=gBars[pid]||{s:sStr,e:eStr};
+  const origS=new Date(bar.s).getTime();
+  const origE=new Date(bar.e).getTime();
+
+  // タイムライン幅を取得
+  const tl=document.getElementById('gtl-'+pid);
+  const tlW=tl?tl.offsetWidth:800;
+  const msPerPx=tlW>0?tms/tlW:tms/800;
+
+  dragState={type:dragType,pid,startX:e.clientX,origS,origE,msPerPx,moved:0,vS,vE};
+  document.addEventListener('mousemove',onGanttMouseMove);
+  document.addEventListener('mouseup',onGanttMouseUp);
+}
+
+function onGanttMouseMove(e){
+  if(!dragState)return;
+  const dx=e.clientX-dragState.startX;
+  dragState.moved=Math.abs(dx);
+  const dms=Math.round(dx*dragState.msPerPx);
+  const DAY=86400000;
+  const roundDay=ms=>Math.round(ms/DAY)*DAY;
+
+  let newS=dragState.origS, newE=dragState.origE;
+  if(dragState.type==='move'){
+    newS=roundDay(dragState.origS+dms);
+    newE=roundDay(dragState.origE+dms);
+  } else if(dragState.type==='resizeL'){
+    newS=roundDay(dragState.origS+dms);
+    if(newS>=newE-DAY) newS=newE-DAY;
+  } else if(dragState.type==='resizeR'){
+    newE=roundDay(dragState.origE+dms);
+    if(newE<=newS+DAY) newE=newS+DAY;
+  }
+
+  gBars[dragState.pid]={s:ds(new Date(newS)),e:ds(new Date(newE))};
+  // DOM直接更新
+  const tms=dragState.vE-dragState.vS;
+  const pct=(dt)=>Math.max(0,Math.min(100,((dt-dragState.vS)/tms)*100));
+  const barEl=document.getElementById('gbar2-'+dragState.pid);
+  if(barEl){
+    const bL=pct(newS), bW=Math.max(0.5,pct(newE)-pct(newS));
+    barEl.style.left=bL+'%';
+    barEl.style.width=bW+'%';
+  }
+}
+
+function onGanttMouseUp(e){
+  if(!dragState)return;
+  document.removeEventListener('mousemove',onGanttMouseMove);
+  document.removeEventListener('mouseup',onGanttMouseUp);
+  if(dragState.moved>4){
+    markDirty();
+    renderGantt(); // マイルストーン日付も更新
+  } else {
+    if(dragState.type==='move') showTaskPopup(e,dragState.pid);
+  }
+  dragState=null;
 }
 
 function openBar(pid){
