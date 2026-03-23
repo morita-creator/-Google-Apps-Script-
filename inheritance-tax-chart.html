@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>相続税申告 工程管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=BIZ+UDGothic:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#1a1a2e;--gold:#b8973a;--gold-light:#d4af5a;--gold-pale:#f5eedc;
+  --ivory:#faf8f2;--border:#d8ceb8;--muted:#7a7060;
+  --phase1:#3d6b8c;--phase2:#5b8a5e;--phase3:#8c5e3d;--phase4:#6b4d8c;--phase5:#8c3d5e;
+  --alert:#c0392b;--ok:#27ae60;--pending:#e67e22;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--ivory);color:var(--ink);min-height:100vh;}
+
+/* ===== HEADER ===== */
+.header{background:var(--ink);position:sticky;top:0;z-index:200;border-bottom:3px solid var(--gold);}
+.header-inner{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 24px;}
+.header-title h1{font-family:'Noto Serif JP',serif;font-size:1.05rem;color:var(--gold-light);letter-spacing:.06em;white-space:nowrap;}
+.header-title span{font-size:.6rem;color:#888;letter-spacing:.1em;margin-left:8px;}
+.header-actions{display:flex;gap:7px;margin-left:auto;align-items:center;}
+.btn{padding:6px 13px;border-radius:4px;font-size:.73rem;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s;border:none;font-weight:500;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-green{background:#27ae60;color:#fff;}
+.btn-green:hover{background:#2ecc71;}
+.btn-red{background:var(--alert);color:#fff;}
+.btn-red:hover{background:#e74c3c;}
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,.3);color:#ccc;}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold-light);}
+.btn-outline-dark{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s;font-weight:500;}
+.btn-outline-dark:hover{border-color:var(--gold);color:var(--gold);}
+.btn-sm{padding:3px 9px;font-size:.67rem;}
+.sync-status{font-size:.65rem;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.sync-ok{background:#eafaf1;color:var(--ok);}
+.sync-err{background:#fdecea;color:var(--alert);}
+.sync-ing{background:#fef9e7;color:var(--pending);}
+.sync-none{background:rgba(255,255,255,.1);color:#888;}
+
+/* ===== GAS設定バー ===== */
+.gas-bar{background:#16213e;border-bottom:1px solid rgba(255,255,255,.08);padding:7px 24px;}
+.gas-bar-inner{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.gas-bar label{font-size:.67rem;color:#888;white-space:nowrap;}
+.gas-bar input{flex:1;min-width:280px;max-width:580px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:#ccc;padding:4px 9px;font-size:.72rem;font-family:'BIZ UDGothic',sans-serif;outline:none;}
+.gas-bar input:focus{border-color:var(--gold);}
+.gas-bar input::placeholder{color:#555;}
+.gas-bar-note{font-size:.62rem;color:#666;}
+
+/* ===== CASE LIST PANEL ===== */
+.case-list-panel{background:#fff;border-bottom:2px solid var(--border);}
+.case-list-inner{max-width:1500px;margin:0 auto;padding:10px 24px;}
+.case-list-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.case-list-title{font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.1em;}
+.case-list-scroll{display:flex;gap:8px;flex-wrap:wrap;}
+.case-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--ivory);cursor:pointer;transition:all .15s;font-size:.73rem;}
+.case-chip:hover{border-color:var(--gold);background:var(--gold-pale);}
+.case-chip.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.case-chip .chip-name{font-weight:600;}
+.case-chip .chip-pct{font-size:.62rem;opacity:.7;}
+.case-chip .chip-deadline{font-size:.6rem;padding:1px 5px;border-radius:10px;background:rgba(192,57,43,.15);color:var(--alert);}
+.case-chip.active .chip-deadline{background:rgba(255,255,255,.2);color:#ffa;}
+.case-chip-new{border-style:dashed;color:var(--muted);}
+.case-chip-new:hover{color:var(--gold);border-color:var(--gold);}
+.no-cases{font-size:.75rem;color:var(--muted);padding:4px 0;}
+
+/* ===== CASE PANEL ===== */
+.case-panel{background:#fff;border-bottom:1px solid var(--border);}
+.case-panel-inner{max-width:1500px;margin:0 auto;padding:12px 24px;}
+.case-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;}
+.case-col{display:flex;flex-direction:column;gap:7px;}
+.col-title{font-size:.63rem;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.fl{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.lbl{font-size:.69rem;color:var(--muted);font-weight:700;white-space:nowrap;min-width:84px;}
+.fi{border:none;border-bottom:1px solid var(--border);padding:3px 5px;font-size:.81rem;font-family:'BIZ UDGothic',sans-serif;color:var(--ink);outline:none;background:transparent;}
+.fi:focus{border-bottom-color:var(--gold);}
+.fi.w50{width:50px;}.fi.w80{width:80px;}.fi.w130{width:130px;}
+.fi.ro{color:var(--gold);font-weight:700;}
+.fi.ro-g{color:var(--phase2);font-weight:700;}
+.fi.ro-r{color:var(--alert);font-weight:700;font-size:.9rem;}
+.unit{font-size:.7rem;color:var(--muted);}
+.heir-section{display:flex;flex-direction:column;gap:6px;}
+.heir-row{display:none;align-items:center;gap:7px;flex-wrap:wrap;}
+.heir-row.vis{display:flex;}
+.tog{padding:3px 9px;border-radius:20px;font-size:.68rem;cursor:pointer;border:1px solid var(--border);background:#f5f5f5;color:var(--muted);transition:all .15s;font-family:'Noto Sans JP',sans-serif;}
+.tog.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.ni{border:none;border-bottom:1px solid var(--border);padding:2px 4px;font-size:.81rem;font-family:'BIZ UDGothic',sans-serif;color:var(--ink);outline:none;background:transparent;text-align:center;width:42px;}
+.ni:focus{border-bottom-color:var(--gold);}
+
+/* ===== SUMMARY BAR ===== */
+.sum-bar{background:var(--ink);border-bottom:2px solid var(--gold);}
+.sum-bar-inner{max-width:1500px;margin:0 auto;padding:9px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.si{display:flex;flex-direction:column;gap:1px;}
+.si-lbl{font-size:.6rem;color:#888;letter-spacing:.07em;}
+.si-val{font-family:'BIZ UDGothic',sans-serif;font-size:.9rem;font-weight:700;color:var(--gold-light);}
+.si-val.red{color:#e74c3c;}.si-val.ok{color:#2ecc71;}.si-val.warn{color:#f39c12;}
+.si-sub{font-size:.6rem;color:#666;}
+.sdiv{width:1px;height:32px;background:rgba(255,255,255,.15);}
+
+/* ===== MAIN ===== */
+.main{max-width:1500px;margin:0 auto;padding:16px 24px 60px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state h2{font-family:'Noto Serif JP',serif;font-size:1.2rem;margin-bottom:10px;color:var(--ink);}
+.empty-state p{font-size:.82rem;line-height:1.8;}
+
+/* PROGRESS CARDS */
+.prog-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:16px;}
+.pc{background:#fff;border:1px solid var(--border);border-radius:8px;padding:11px 13px;position:relative;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.pc:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.pc[data-p="1"]::before{background:var(--phase1);}
+.pc[data-p="2"]::before{background:var(--phase2);}
+.pc[data-p="3"]::before{background:var(--phase3);}
+.pc[data-p="4"]::before{background:var(--phase4);}
+.pc[data-p="5"]::before{background:var(--phase5);}
+.pc-n{font-size:.6rem;color:var(--muted);margin-bottom:2px;}
+.pc-t{font-size:.74rem;font-weight:700;margin-bottom:7px;line-height:1.35;}
+.pc-bar{height:4px;background:#eee;border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.pc-fill{height:100%;border-radius:3px;transition:width .4s;}
+.pc[data-p="1"] .pc-fill{background:var(--phase1);}
+.pc[data-p="2"] .pc-fill{background:var(--phase2);}
+.pc[data-p="3"] .pc-fill{background:var(--phase3);}
+.pc[data-p="4"] .pc-fill{background:var(--phase4);}
+.pc[data-p="5"] .pc-fill{background:var(--phase5);}
+.pc-s{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid var(--border);}
+.tab{padding:8px 16px;font-size:.74rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted);transition:all .2s;user-select:none;}
+.tab:hover{color:var(--ink);}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700;}
+.tab-content{display:none;}.tab-content.active{display:block;}
+
+/* CHECKLIST */
+.cl-sec{margin-top:15px;}
+.sec-hd{display:flex;align-items:center;gap:9px;margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.sec-badge{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:.67rem;font-weight:700;color:#fff;}
+.sec-hd h2{font-family:'Noto Serif JP',serif;font-size:.91rem;font-weight:600;}
+.sec-cnt{margin-left:auto;font-size:.67rem;color:var(--muted);}
+.tt{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;font-size:.76rem;}
+.tt thead th{background:var(--ink);color:rgba(255,255,255,.7);padding:7px 9px;text-align:left;font-weight:500;font-size:.65rem;letter-spacing:.05em;}
+.tt tbody tr{border-bottom:1px solid #f0ece4;transition:background .15s;}
+.tt tbody tr:last-child{border-bottom:none;}
+.tt tbody tr:hover{background:var(--gold-pale);}
+.tt td{padding:7px 9px;vertical-align:middle;}
+.chk{width:16px;height:16px;border:2px solid var(--border);border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+.chk.on{background:var(--ok);border-color:var(--ok);}
+.chk.on::after{content:'✓';color:#fff;font-size:10px;font-weight:700;}
+.tn{font-weight:500;}.tn.done{text-decoration:line-through;color:var(--muted);}
+.ts{font-size:.66rem;color:var(--muted);margin-top:1px;}
+.dtag{font-size:.65rem;padding:2px 6px;border-radius:3px;font-family:'BIZ UDGothic',sans-serif;font-weight:700;white-space:nowrap;}
+.dtag.asap{background:#fdecea;color:var(--alert);border:1px solid var(--alert);}
+.dtag.month1{background:#fdecea;color:var(--alert);}
+.dtag.month3{background:#fef9e7;color:#e67e22;}
+.dtag.month6{background:#eafaf1;color:var(--ok);}
+.dtag.month10{background:#eaf2fb;color:var(--phase1);}
+.stag{font-size:.64rem;padding:2px 7px;border-radius:20px;cursor:pointer;font-weight:500;white-space:nowrap;display:inline-block;}
+.stag.done{background:#eafaf1;color:var(--ok);}
+.stag.inprogress{background:#fef9e7;color:var(--pending);}
+.stag.notstarted{background:#f5f5f5;color:#999;}
+.stag.waiting{background:#eaf2fb;color:var(--phase1);}
+.pdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
+.ph{background:var(--alert);}.pm{background:var(--pending);}.pl{background:#aaa;}
+.ti{border:none;border-bottom:1px solid transparent;background:transparent;font-size:.71rem;color:var(--ink);padding:2px 3px;width:100%;outline:none;font-family:'Noto Sans JP',sans-serif;}
+.ti:focus{border-bottom:1px solid var(--gold);}
+
+/* GANTT */
+.gc{display:flex;gap:9px;align-items:center;margin:13px 0 9px;flex-wrap:wrap;}
+.gc label{font-size:.7rem;color:var(--muted);font-weight:700;}
+.gc input[type=date]{border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:.73rem;font-family:'BIZ UDGothic',sans-serif;outline:none;background:#fff;}
+.gc input[type=date]:focus{border-color:var(--gold);}
+.gantt-outer{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.gantt-scroll{overflow-x:auto;}
+.gt{border-collapse:collapse;width:100%;min-width:600px;}
+.gt th{background:var(--ink);color:rgba(255,255,255,.65);font-size:.63rem;font-weight:500;padding:7px 5px;text-align:center;border-right:1px solid rgba(255,255,255,.08);white-space:nowrap;}
+.gt th.tth{text-align:left;padding-left:12px;min-width:200px;border-right:2px solid var(--gold);}
+.gt td{border-right:1px solid #f0ece4;border-bottom:1px solid #f0ece4;padding:0;height:32px;position:relative;}
+.gt td.ttd{padding:0 9px;font-size:.72rem;border-right:2px solid var(--border);white-space:nowrap;vertical-align:middle;}
+.gt tr:hover td{background:var(--gold-pale);}
+.gt tr.pr td{background:#f4f0e8;}
+.gt tr.mr td{background:#faf8f2;}
+.gbar{position:absolute;top:7px;height:17px;border-radius:3px;z-index:2;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;padding-left:4px;font-size:.56rem;color:#fff;font-weight:700;overflow:hidden;}
+.gbar:hover{opacity:.78;}
+.gdm{width:11px;height:11px;transform:rotate(45deg);background:var(--gold);position:absolute;top:10px;z-index:3;cursor:pointer;}
+.gdm:hover{background:var(--alert);}
+.bar-editor{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:9px;display:none;}
+.be-title{font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:7px;}
+.be-row{display:flex;gap:13px;flex-wrap:wrap;align-items:center;}
+.be-f{display:flex;align-items:center;gap:5px;font-size:.66rem;}
+.be-f input[type=date]{border:none;border-bottom:1px solid var(--border);font-size:.66rem;font-family:'BIZ UDGothic',sans-serif;padding:1px 3px;outline:none;background:transparent;width:110px;}
+.be-f input[type=date]:focus{border-bottom-color:var(--gold);}
+
+/* NOTES */
+.notes-panel{margin-top:15px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:15px;}
+.notes-title{font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.1em;margin-bottom:10px;}
+.notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ncard{background:var(--ivory);border:1px solid var(--border);border-radius:6px;padding:9px 11px;}
+.ncard-l{font-size:.62rem;font-weight:700;color:var(--muted);margin-bottom:4px;letter-spacing:.07em;}
+.ncard textarea{width:100%;border:none;background:transparent;font-size:.73rem;color:var(--ink);resize:none;outline:none;font-family:'Noto Sans JP',sans-serif;line-height:1.7;min-height:60px;}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
+.mo.open{display:flex;}
+.modal{background:#fff;border-radius:10px;padding:24px;max-width:560px;width:90%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-title{font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:600;margin-bottom:15px;padding-bottom:8px;border-bottom:2px solid var(--gold);}
+.tb table{width:100%;border-collapse:collapse;font-size:.76rem;}
+.tb th{background:#f8f4ee;padding:6px 9px;text-align:left;font-weight:700;font-size:.65rem;color:var(--muted);letter-spacing:.06em;}
+.tb td{padding:6px 9px;border-bottom:1px solid #f0ece4;font-family:'BIZ UDGothic',sans-serif;}
+.tb td:last-child{text-align:right;font-weight:700;}
+.tb tr.tr td{background:#fff8ee;font-weight:700;color:var(--alert);font-size:.83rem;}
+.tnote{font-size:.65rem;color:var(--muted);margin-top:9px;line-height:1.7;padding:8px;background:#f8f4ee;border-radius:4px;}
+
+/* SETUP MODAL */
+.setup-modal{max-width:500px;}
+.setup-steps{counter-reset:step;}
+.setup-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.setup-step-num{width:24px;height:24px;border-radius:50%;background:var(--gold);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.setup-step-body{flex:1;}
+.setup-step-title{font-size:.78rem;font-weight:700;margin-bottom:3px;}
+.setup-step-desc{font-size:.7rem;color:var(--muted);line-height:1.6;}
+.setup-step-desc code{background:#f0ece4;padding:1px 4px;border-radius:3px;font-size:.68rem;}
+.setup-url-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:6px 9px;font-size:.75rem;font-family:'BIZ UDGothic',sans-serif;outline:none;margin-top:6px;}
+.setup-url-input:focus{border-color:var(--gold);}
+
+/* DELETE CONFIRM */
+.delete-modal{max-width:380px;}
+.delete-modal p{font-size:.82rem;margin-bottom:16px;line-height:1.7;}
+.delete-modal .target-name{font-weight:700;color:var(--alert);}
+
+@media(max-width:900px){
+  .prog-grid{grid-template-columns:repeat(3,1fr);}
+  .case-grid{grid-template-columns:1fr;}
+  .notes-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-title">
+      <h1>相続税申告 工程管理</h1>
+      <span>INHERITANCE TAX FILING MANAGEMENT</span>
+    </div>
+    <div class="header-actions">
+      <span class="sync-status sync-none" id="syncStatus">未接続</span>
+      <button class="btn btn-outline" onclick="showTax()">🧮 相続税概算</button>
+      <button class="btn btn-outline" onclick="exportExcel()">📊 Excel出力</button>
+      <button class="btn btn-outline" onclick="window.print()">🖨 印刷</button>
+      <button class="btn btn-gold" id="saveBtn" onclick="syncSave()">☁ 保存・同期</button>
+      <button class="btn btn-outline" onclick="showSetup()" title="接続設定">⚙</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAS URL BAR -->
+<div class="gas-bar" id="gasBar">
+  <div class="gas-bar-inner">
+    <label>🔗 Apps Script URL：</label>
+    <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/xxxxxxxx/exec　← デプロイ後にここに貼り付けてください"
+      onchange="saveGasUrl()" oninput="saveGasUrl()">
+    <button class="btn btn-outline btn-sm" onclick="testConnection()">接続テスト</button>
+    <button class="btn btn-outline btn-sm" onclick="loadCases()">📥 案件一覧を取得</button>
+    <span class="gas-bar-note">URLを設定すると複数PCからデータを共有できます</span>
+  </div>
+</div>
+
+<!-- CASE LIST PANEL -->
+<div class="case-list-panel">
+  <div class="case-list-inner">
+    <div class="case-list-header">
+      <span class="case-list-title">📁 案件一覧</span>
+      <button class="btn btn-outline-dark btn-sm" onclick="newCase()">＋ 新規案件</button>
+      <button class="btn btn-outline-dark btn-sm" onclick="loadCases()" title="最新の案件一覧をサーバーから取得">🔄 更新</button>
+      <button class="btn btn-red btn-sm" id="deleteCaseBtn" onclick="confirmDeleteCase()" style="display:none;">🗑 この案件を削除</button>
+    </div>
+    <div class="case-list-scroll" id="caseListScroll">
+      <span class="no-cases">「新規案件」から案件を追加してください</span>
+    </div>
+  </div>
+</div>
+
+<!-- CASE PANEL -->
+<div class="case-panel" id="casePanel" style="display:none;">
+  <div class="case-panel-inner">
+    <div class="case-grid">
+      <div class="case-col">
+        <div class="col-title">案件情報</div>
+        <div class="fl"><span class="lbl">被相続人</span><input type="text" class="fi w130" id="decedent" placeholder="山田 太郎" oninput="markDirty()"><span class="unit">様</span></div>
+        <div class="fl"><span class="lbl">相続開始日</span><input type="date" class="fi" id="deathDate" onchange="calcDL();markDirty();"></div>
+        <div class="fl"><span class="lbl">受任日</span><input type="date" class="fi" id="acceptDate" onchange="markDirty()"></div>
+        <div class="fl"><span class="lbl">担当税理士</span><input type="text" class="fi w130" id="staffName" placeholder="担当者名" oninput="markDirty()"></div>
+      </div>
+      <div class="case-col">
+        <div class="col-title">法定相続人</div>
+        <div class="heir-section">
+          <div class="heir-row vis"><span class="lbl">配偶者</span>
+            <button class="tog" id="tog-y" onclick="setSpouse(true)">あり</button>
+            <button class="tog" id="tog-n" onclick="setSpouse(false)">なし</button>
+          </div>
+          <div class="heir-row vis" id="hr-child"><span class="lbl">子（第1順位）</span>
+            <input type="number" class="ni" id="n-child" min="0" max="20" value="0" onchange="updH();markDirty();">
+            <span class="unit">名</span>
+          </div>
+          <div class="heir-row" id="hr-parent"><span class="lbl">親（第2順位）</span>
+            <input type="number" class="ni" id="n-parent" min="0" max="4" value="0" onchange="updH();markDirty();">
+            <span class="unit">名</span>
+          </div>
+          <div class="heir-row" id="hr-sibling"><span class="lbl">兄弟姉妹（第3順位）</span>
+            <input type="number" class="ni" id="n-sibling" min="0" max="20" value="0" onchange="updH();markDirty();">
+            <span class="unit">名</span>
+          </div>
+        </div>
+      </div>
+      <div class="case-col">
+        <div class="col-title">遺産・概算税額</div>
+        <div class="fl"><span class="lbl">遺産総額</span><input type="number" class="fi w80" id="estVal" placeholder="10000" oninput="calcTax();markDirty();"><span class="unit">万円</span></div>
+        <div class="fl"><span class="lbl">法定相続人数</span><input type="text" class="fi w50 ro" id="heirCnt" readonly placeholder="—"><span class="unit">名</span></div>
+        <div class="fl"><span class="lbl">基礎控除額</span><input type="text" class="fi w80 ro-g" id="basicDed" readonly placeholder="—"><span class="unit">万円</span></div>
+        <div class="fl">
+          <span class="lbl">相続税総額（概算）</span>
+          <input type="text" class="fi w80 ro-r" id="totalTax" readonly placeholder="—">
+          <span class="unit">万円</span>
+          <button class="btn btn-outline-dark btn-sm" onclick="showTax()" style="margin-left:4px;">詳細</button>
+        </div>
+        <div id="taxNote" style="font-size:.62rem;color:var(--muted);margin-top:2px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY BAR -->
+<div class="sum-bar" id="sumBar" style="display:none;">
+  <div class="sum-bar-inner">
+    <div class="si"><span class="si-lbl">申告期限</span><span class="si-val red" id="dlDisp">—</span></div>
+    <div class="sdiv"></div>
+    <div class="si"><span class="si-lbl">残日数</span><span class="si-val" id="daysDisp">—</span></div>
+    <div class="sdiv"></div>
+    <div class="si"><span class="si-lbl">経過日数</span><span class="si-val" id="elapsedDisp">—</span></div>
+    <div class="sdiv"></div>
+    <div class="si"><span class="si-lbl">準確定申告期限</span><span class="si-val warn" id="junDisp">—</span><span class="si-sub">相続開始＋4ヶ月</span></div>
+    <div class="sdiv"></div>
+    <div class="si"><span class="si-lbl">相続放棄期限</span><span class="si-val warn" id="abanDisp">—</span><span class="si-sub">相続開始＋3ヶ月</span></div>
+    <div class="sdiv"></div>
+    <div class="si"><span class="si-lbl">未保存の変更</span><span class="si-val" id="dirtyDisp" style="font-size:.75rem;">—</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainArea">
+  <div class="empty-state" id="emptyState">
+    <h2>案件を選択してください</h2>
+    <p>上の「＋ 新規案件」から案件を追加するか、<br>既存の案件をクリックして開いてください。</p>
+    <br>
+    <p style="font-size:.75rem;color:#aaa;">Apps Script URLを設定すると、<br>スタッフ全員でリアルタイムにデータを共有できます。</p>
+  </div>
+  <div id="caseContent" style="display:none;">
+    <div class="prog-grid" id="progGrid"></div>
+    <div class="tabs">
+      <div class="tab active" data-tab="checklist">📋 チェックリスト</div>
+      <div class="tab" data-tab="gantt">📊 ガントチャート</div>
+      <div class="tab" data-tab="notes">📝 メモ</div>
+    </div>
+    <div class="tab-content active" id="tab-checklist"><div id="clContainer"></div></div>
+    <div class="tab-content" id="tab-gantt">
+      <div class="gc">
+        <label>表示期間：</label>
+        <input type="date" id="gStart" onchange="renderGantt();updateWC();">
+        <span style="font-size:.72rem;color:var(--muted);">〜</span>
+        <input type="date" id="gEnd" onchange="renderGantt();updateWC();">
+        <span id="wcLabel" style="font-size:.67rem;color:var(--muted);"></span>
+        <button class="btn btn-outline-dark btn-sm" onclick="ganttToDeadline()">申告期限に合わせる</button>
+      </div>
+      <div class="bar-editor" id="barEd">
+        <div class="be-title" id="beTitle">バー期間の編集</div>
+        <div class="be-row">
+          <div class="be-f"><span>開始</span><input type="date" id="beS"></div>
+          <div class="be-f"><span>終了</span><input type="date" id="beE"></div>
+          <button class="btn btn-gold btn-sm" onclick="applyBar()">更新</button>
+          <button class="btn btn-outline-dark btn-sm" onclick="closeBar()">閉じる</button>
+        </div>
+      </div>
+      <div class="gantt-outer"><div class="gantt-scroll"><div id="ganttCont"></div></div></div>
+    </div>
+    <div class="tab-content" id="tab-notes">
+      <div class="notes-panel">
+        <div class="notes-title">📝 NOTES & REMARKS</div>
+        <div class="notes-grid">
+          <div class="ncard"><div class="ncard-l">相続人・関係者メモ</div><textarea id="nt1" placeholder="相続人の連絡先、関係性、特記事項など..." oninput="markDirty()"></textarea></div>
+          <div class="ncard"><div class="ncard-l">財産・負債概要</div><textarea id="nt2" placeholder="不動産（所在・地番）、金融資産、負債、特殊資産など..." oninput="markDirty()"></textarea></div>
+          <div class="ncard"><div class="ncard-l">論点・検討事項</div><textarea id="nt3" placeholder="小規模宅地等の適用可否、配偶者の税額軽減、生前贈与、名義預金の有無など..." oninput="markDirty()"></textarea></div>
+          <div class="ncard"><div class="ncard-l">依頼者への連絡履歴</div><textarea id="nt4" placeholder="面談日、電話・メール内容、提出書類の受領記録など..." oninput="markDirty()"></textarea></div>
+          <div class="ncard"><div class="ncard-l">外部専門家連携</div><textarea id="nt5" placeholder="不動産鑑定士、司法書士、弁護士等の連絡先・進捗..." oninput="markDirty()"></textarea></div>
+          <div class="ncard"><div class="ncard-l">納税準備・延納・物納</div><textarea id="nt6" placeholder="現金納付可否、延納申請の要否、物納財産の候補など..." oninput="markDirty()"></textarea></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAX MODAL -->
+<div class="mo" id="taxModal" onclick="if(event.target===this)closeTax()">
+  <div class="modal">
+    <div class="modal-title">🧮 相続税額 概算計算</div>
+    <div class="tb" id="taxBreak"></div>
+    <div class="tnote" id="taxMNote"></div>
+    <button class="btn btn-gold" style="margin-top:13px;width:100%;" onclick="closeTax()">閉じる</button>
+  </div>
+</div>
+
+<!-- SETUP MODAL -->
+<div class="mo" id="setupModal" onclick="if(event.target===this)closeSetup()">
+  <div class="modal setup-modal">
+    <div class="modal-title">⚙ Google Apps Script 接続設定</div>
+    <div class="setup-steps">
+      <div class="setup-step">
+        <div class="setup-step-num">1</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">Googleスプレッドシートを新規作成</div>
+          <div class="setup-step-desc">Google Driveで新しいスプレッドシートを作成します。名前は任意（例：相続税申告管理）</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">2</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">Apps Scriptにコードを貼り付け</div>
+          <div class="setup-step-desc">スプレッドシートで「拡張機能」→「Apps Script」を開き、<code>apps-script.gs</code> の内容を全て貼り付けて保存（Ctrl+S）</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">3</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">ウェブアプリとしてデプロイ</div>
+          <div class="setup-step-desc">「デプロイ」→「新しいデプロイ」→ 種類：<code>ウェブアプリ</code><br>
+          実行ユーザー：<code>自分</code>　アクセス：<code>全員</code><br>
+          → 「デプロイ」→ 表示されたURLをコピー</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">4</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">URLをここに貼り付ける</div>
+          <input type="text" class="setup-url-input" id="setupUrl"
+            placeholder="https://script.google.com/macros/s/xxxxxxxx/exec">
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">5</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">HTMLファイルをスタッフに共有</div>
+          <div class="setup-step-desc">同じHTMLファイルを各スタッフのPCに配布するだけで共有完了。全員が同じスプレッドシートを参照します。</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn btn-gold" style="flex:1;" onclick="applySetupUrl()">URLを保存して接続</button>
+      <button class="btn btn-outline-dark" onclick="closeSetup()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="mo" id="deleteModal" onclick="if(event.target===this)closeDelete()">
+  <div class="modal delete-modal">
+    <div class="modal-title">🗑 案件の削除</div>
+    <p>以下の案件を削除します。この操作は元に戻せません。<br>
+    <span class="target-name" id="deleteTargetName"></span></p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-red" style="flex:1;" onclick="executeDeleteCase()">削除する</button>
+      <button class="btn btn-outline-dark" style="flex:1;" onclick="closeDelete()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// TASK MASTER DATA
+// =============================================
+const phases=[
+  {id:1,name:'受任・初期確認',color:'#3d6b8c',tasks:[
+    {id:'p1-1',name:'委任契約書の締結',sub:'報酬額・業務範囲の確認',dl:'asap',pr:'high'},
+    {id:'p1-2',name:'相続人の確定',sub:'戸籍謄本（被相続人・相続人全員）の収集',dl:'month1',pr:'high'},
+    {id:'p1-3',name:'相続関係説明図の作成',sub:'法定相続分の確認',dl:'month1',pr:'med'},
+    {id:'p1-4',name:'遺言書の有無確認',sub:'自筆・公正証書・法務局保管の確認',dl:'asap',pr:'high'},
+    {id:'p1-5',name:'遺言書の検認手続き',sub:'自筆証書遺言の場合は家庭裁判所へ',dl:'month1',pr:'med'},
+    {id:'p1-6',name:'相続放棄期限の確認',sub:'相続開始から3ヶ月以内',dl:'month1',pr:'high'},
+    {id:'p1-7',name:'準確定申告の要否確認',sub:'相続開始から4ヶ月以内・事業所得等あり',dl:'month1',pr:'high'},
+  ]},
+  {id:2,name:'財産・負債の調査',color:'#5b8a5e',tasks:[
+    {id:'p2-1',name:'不動産の調査',sub:'登記簿謄本・固定資産税評価証明書・公図・測量図',dl:'month3',pr:'high'},
+    {id:'p2-2',name:'金融資産の調査',sub:'預金残高証明書・有価証券残高（相続開始日現在）',dl:'month3',pr:'high'},
+    {id:'p2-3',name:'生命保険の調査',sub:'生命保険金・死亡退職金の確認（非課税枠）',dl:'month3',pr:'high'},
+    {id:'p2-4',name:'債務・葬式費用の確認',sub:'借入金・未払税金・葬儀費用の領収書',dl:'month3',pr:'med'},
+    {id:'p2-5',name:'生前贈与の調査',sub:'過去3年分（令和9年以降は7年分）の贈与',dl:'month3',pr:'high'},
+    {id:'p2-6',name:'名義預金・名義株の確認',sub:'実質的な帰属者の判断',dl:'month3',pr:'high'},
+    {id:'p2-7',name:'相続時精算課税の確認',sub:'被相続人・相続人双方の贈与税申告履歴',dl:'month3',pr:'med'},
+    {id:'p2-8',name:'事業用資産・株式の調査',sub:'非上場株式の場合は株式評価が必要',dl:'month3',pr:'med'},
+  ]},
+  {id:3,name:'評価・計算',color:'#8c5e3d',tasks:[
+    {id:'p3-1',name:'土地の評価（路線価方式）',sub:'正面路線価・各種補正率・奥行価格補正等',dl:'month6',pr:'high'},
+    {id:'p3-2',name:'小規模宅地等の特例の検討',sub:'特定居住用・特定事業用・貸付事業用',dl:'month6',pr:'high'},
+    {id:'p3-3',name:'非上場株式の評価',sub:'類似業種比準価額・純資産価額・特定評価会社',dl:'month6',pr:'med'},
+    {id:'p3-4',name:'準確定申告の作成・提出',sub:'相続開始から4ヶ月以内（必要な場合）',dl:'month3',pr:'high'},
+    {id:'p3-5',name:'課税価格の計算',sub:'各相続人の課税価格の合計額',dl:'month6',pr:'high'},
+    {id:'p3-6',name:'相続税の試算',sub:'各種控除・税額軽減の適用検討',dl:'month6',pr:'high'},
+    {id:'p3-7',name:'不動産鑑定の要否判断',sub:'路線価評価と鑑定評価の比較検討',dl:'month6',pr:'med'},
+  ]},
+  {id:4,name:'遺産分割・申告書作成',color:'#6b4d8c',tasks:[
+    {id:'p4-1',name:'遺産分割協議書の内容確認',sub:'分割方法・各相続人の取得財産',dl:'month6',pr:'high'},
+    {id:'p4-2',name:'分割案の税額シミュレーション',sub:'配偶者の税額軽減・二次相続も含めた検討',dl:'month6',pr:'high'},
+    {id:'p4-3',name:'遺産分割協議の完了確認',sub:'全相続人の実印・印鑑証明書',dl:'month6',pr:'high'},
+    {id:'p4-4',name:'申告書（第1〜15表）の作成',sub:'財産目録・評価明細書の添付',dl:'month10',pr:'high'},
+    {id:'p4-5',name:'添付書類の整備',sub:'戸籍・登記・残高証明書等のチェックリスト確認',dl:'month10',pr:'high'},
+    {id:'p4-6',name:'依頼者への申告内容説明',sub:'税額・納付方法・今後のスケジュールの説明',dl:'month10',pr:'high'},
+    {id:'p4-7',name:'申告書の最終確認・押印依頼',sub:'各相続人への申告書説明と署名押印',dl:'month10',pr:'high'},
+  ]},
+  {id:5,name:'申告・納税・完了',color:'#8c3d5e',tasks:[
+    {id:'p5-1',name:'申告書の提出',sub:'所轄税務署への提出（期限10ヶ月）',dl:'month10',pr:'high'},
+    {id:'p5-2',name:'相続税の納付',sub:'納付書・電子納付の確認',dl:'month10',pr:'high'},
+    {id:'p5-3',name:'延納・物納の申請',sub:'必要な場合のみ・事前準備が必要',dl:'month10',pr:'med'},
+    {id:'p5-4',name:'名義変更手続きのサポート',sub:'不動産・預金口座・有価証券',dl:'month10',pr:'low'},
+    {id:'p5-5',name:'更正の請求・修正申告の検討',sub:'申告後に誤りが判明した場合',dl:'month10',pr:'low'},
+    {id:'p5-6',name:'税務調査への対応準備',sub:'申告書控え・評価資料の保管',dl:'month10',pr:'med'},
+  ]}
+];
+const dlMap={asap:{l:'速やかに',c:'asap'},month1:{l:'1ヶ月以内',c:'month1'},month3:{l:'3ヶ月目安',c:'month3'},month6:{l:'6ヶ月目安',c:'month6'},month10:{l:'申告期限',c:'month10'}};
+const stOpts=[{v:'notstarted',l:'未着手',c:'notstarted'},{v:'inprogress',l:'進行中',c:'inprogress'},{v:'waiting',l:'待ち',c:'waiting'},{v:'done',l:'完了',c:'done'}];
+const prMap={high:'ph',med:'pm',low:'pl'};
+
+// =============================================
+// APP STATE
+// =============================================
+let gasUrl = '';
+let cases = [];       // [{id, 被相続人, ...}]
+let currentCaseId = null;
+let tState = {};      // taskId -> {chk,st,note,asgn}
+let sp = true;
+let gBars = {};
+let editPid = null;
+let isDirty = false;
+let lastTax = null;
+
+const defSpans=[
+  {pid:1,fs:0,fe:.18},{pid:2,fs:.12,fe:.52},{pid:3,fs:.40,fe:.72},
+  {pid:4,fs:.60,fe:.90},{pid:5,fs:.88,fe:1.0}
+];
+
+// =============================================
+// INIT
+// =============================================
+function init(){
+  gasUrl = localStorage.getItem('gas_url') || '';
+  document.getElementById('gasUrl').value = gasUrl;
+  document.getElementById('setupUrl').value = gasUrl;
+  setSyncStatus(gasUrl ? 'none' : 'none', gasUrl ? '未同期' : '未接続');
+
+  // ローカルキャッシュから案件一覧を復元
+  try {
+    const cached = localStorage.getItem('cases_cache');
+    if(cached) cases = JSON.parse(cached);
+  } catch(e){}
+
+  renderCaseList();
+  setupTabs();
+
+  // URLが設定済みなら自動で案件一覧を取得
+  if(gasUrl) loadCases();
+}
+
+function setupTabs(){
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+      if(tab.dataset.tab==='gantt') renderGantt();
+    });
+  });
+}
+
+// =============================================
+// GAS URL
+// =============================================
+function saveGasUrl(){
+  gasUrl = document.getElementById('gasUrl').value.trim();
+  localStorage.setItem('gas_url', gasUrl);
+}
+
+function applySetupUrl(){
+  const url = document.getElementById('setupUrl').value.trim();
+  gasUrl = url;
+  document.getElementById('gasUrl').value = url;
+  localStorage.setItem('gas_url', url);
+  closeSetup();
+  if(url) { testConnection(); loadCases(); }
+}
+
+async function testConnection(){
+  if(!gasUrl){ alert('Apps Script URLを入力してください'); return; }
+  setSyncStatus('ing','接続中...');
+  try {
+    const res = await gasFetch('getCases');
+    setSyncStatus('ok','接続OK');
+    setTimeout(()=>setSyncStatus('ok','同期済み'),1500);
+  } catch(e){
+    setSyncStatus('err','接続失敗: '+e.message);
+  }
+}
+
+function setSyncStatus(type, text){
+  const el = document.getElementById('syncStatus');
+  el.textContent = text;
+  el.className = 'sync-status';
+  if(type==='ok') el.classList.add('sync-ok');
+  else if(type==='err') el.classList.add('sync-err');
+  else if(type==='ing') el.classList.add('sync-ing');
+  else el.classList.add('sync-none');
+}
+
+// =============================================
+// GAS FETCH（CORSプロキシ経由でPostできないため、GETで対応）
+// =============================================
+async function gasFetch(action, params={}){
+  if(!gasUrl) throw new Error('URLが未設定です');
+  // GASはGETのみ（CORS対応）
+  let url = gasUrl + '?action=' + encodeURIComponent(action);
+  Object.entries(params).forEach(([k,v])=>{
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(typeof v==='object'?JSON.stringify(v):v);
+  });
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if(json.error) throw new Error(json.error);
+  return json;
+}
+
+// =============================================
+// CASE LIST
+// =============================================
+async function loadCases(){
+  if(!gasUrl){
+    renderCaseList();
+    return;
+  }
+  setSyncStatus('ing','取得中...');
+  try {
+    const data = await gasFetch('getCases');
+    cases = data.cases || [];
+    localStorage.setItem('cases_cache', JSON.stringify(cases));
+    renderCaseList();
+    setSyncStatus('ok','同期済み');
+    // 現在開いている案件を再読み込み
+    if(currentCaseId) {
+      const c = cases.find(x=>x['案件ID']===currentCaseId);
+      if(c) { /* 画面は維持 */ }
+    }
+  } catch(e){
+    setSyncStatus('err','取得失敗: '+e.message);
+  }
+}
+
+function renderCaseList(){
+  const el = document.getElementById('caseListScroll');
+  if(cases.length===0){
+    el.innerHTML='<span class="no-cases">「＋ 新規案件」から案件を追加してください</span>';
+    return;
+  }
+  el.innerHTML = cases.map(c=>{
+    const id = c['案件ID'];
+    const name = c['被相続人'] || '（名前未入力）';
+    const pct = c['進捗(%)'] || 0;
+    const dl = c['申告期限'] || '';
+    const isActive = id === currentCaseId;
+
+    // 残日数
+    let daysLabel = '';
+    if(dl){
+      const dlDate = new Date(dl);
+      const diff = Math.floor((dlDate - new Date())/86400000);
+      if(!isNaN(diff)) daysLabel = diff < 0 ? '期限超過' : `残${diff}日`;
+    }
+
+    return `<div class="case-chip ${isActive?'active':''}" onclick="openCase('${id}')">
+      <span class="chip-name">${name}</span>
+      <span class="chip-pct">${pct}%</span>
+      ${daysLabel ? `<span class="chip-deadline">${daysLabel}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// =============================================
+// CASE OPEN / NEW / DELETE
+// =============================================
+function newCase(){
+  if(isDirty && currentCaseId){
+    if(!confirm('未保存の変更があります。新規案件を開きますか？')) return;
+  }
+  const id = 'case_' + Date.now();
+  currentCaseId = id;
+  resetCaseForm();
+  showCaseUI();
+  isDirty = false;
+  markDirty();
+  document.getElementById('deleteCaseBtn').style.display='inline-block';
+}
+
+async function openCase(id){
+  if(isDirty && currentCaseId && currentCaseId !== id){
+    if(!confirm('未保存の変更があります。切り替えますか？')) return;
+  }
+  currentCaseId = id;
+
+  // ローカルキャッシュから基本情報を即時表示
+  const cached = cases.find(c=>c['案件ID']===id);
+  if(cached) applyCaseData(cached, null);
+  showCaseUI();
+  renderCaseList();
+  document.getElementById('deleteCaseBtn').style.display='inline-block';
+
+  // GASから詳細（タスク進捗）を取得
+  if(gasUrl){
+    setSyncStatus('ing','読込中...');
+    try {
+      const json = await gasFetch('getCase', {id});
+      if(json.case) applyCaseData(json.case, json.tasks);
+      setSyncStatus('ok','同期済み');
+      isDirty = false;
+      updateDirtyDisp();
+    } catch(e){
+      setSyncStatus('err','読込失敗: '+e.message);
+    }
+  } else {
+    // ローカルストレージから読み込み
+    try {
+      const local = localStorage.getItem('case_'+id);
+      if(local) {
+        const d = JSON.parse(local);
+        applyLocalData(d);
+      }
+    } catch(e){}
+    isDirty = false;
+    updateDirtyDisp();
+  }
+}
+
+function applyCaseData(caseRow, tasks){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined&&v!==null)e.value=v;};
+  set('decedent', caseRow['被相続人']);
+  set('deathDate', caseRow['相続開始日']);
+  set('acceptDate', caseRow['受任日']);
+  set('staffName', caseRow['担当税理士']);
+  set('estVal', caseRow['遺産総額(万円)']);
+  set('n-child', caseRow['子']||0);
+  set('n-parent', caseRow['親']||0);
+  set('n-sibling', caseRow['兄弟姉妹']||0);
+  set('gStart', caseRow['ガント開始']);
+  set('gEnd', caseRow['ガント終了']);
+  sp = caseRow['配偶者'] !== 'なし';
+  document.getElementById('tog-y').classList.toggle('on',sp);
+  document.getElementById('tog-n').classList.toggle('on',!sp);
+
+  // ガントバー
+  try { if(caseRow['ガントバー']) gBars = JSON.parse(caseRow['ガントバー']); } catch(e){ gBars={}; }
+
+  // メモ
+  ['メモ1','メモ2','メモ3','メモ4','メモ5','メモ6'].forEach((k,i)=>{
+    const el=document.getElementById('nt'+(i+1));
+    if(el && caseRow[k]) el.value=caseRow[k];
+  });
+
+  // タスク進捗
+  if(tasks && tasks.length > 0){
+    tState = {};
+    tasks.forEach(t=>{
+      tState[t['タスクID']] = {
+        chk: t['チェック']==='完了',
+        st:  t['ステータス']||'notstarted',
+        asgn:t['担当']||'',
+        note:t['メモ']||'',
+      };
+    });
+  } else {
+    initTState();
+  }
+
+  updH(); calcDL(); calcTax();
+  renderProg(); renderCL();
+  if(!document.getElementById('gStart').value) ganttToDeadline();
+  else renderGantt();
+}
+
+function applyLocalData(d){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.value=v;};
+  set('decedent',d.decedent);set('deathDate',d.deathDate);set('acceptDate',d.acceptDate);
+  set('staffName',d.staffName);set('estVal',d.estVal);
+  set('n-child',d.nChild||0);set('n-parent',d.nParent||0);set('n-sibling',d.nSibling||0);
+  set('gStart',d.gStart);set('gEnd',d.gEnd);
+  if(typeof d.sp!=='undefined'){
+    sp=d.sp;
+    document.getElementById('tog-y').classList.toggle('on',sp);
+    document.getElementById('tog-n').classList.toggle('on',!sp);
+  }
+  if(d.gBars) gBars=d.gBars;
+  if(d.tState) tState=d.tState; else initTState();
+  if(d.notes) d.notes.forEach((n,i)=>{const e=document.getElementById('nt'+(i+1));if(e)e.value=n;});
+  updH(); calcDL(); calcTax();
+  renderProg(); renderCL();
+  if(!document.getElementById('gStart').value) ganttToDeadline();
+  else renderGantt();
+}
+
+function resetCaseForm(){
+  ['decedent','staffName','estVal'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['deathDate','acceptDate','gStart','gEnd'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['n-child','n-parent','n-sibling'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='0';});
+  ['nt1','nt2','nt3','nt4','nt5','nt6'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  sp=true;
+  document.getElementById('tog-y').classList.add('on');
+  document.getElementById('tog-n').classList.remove('on');
+  gBars={};
+  initTState();
+  updH(); calcDL(); calcTax();
+  renderProg(); renderCL();
+}
+
+function initTState(){
+  tState={};
+  phases.forEach(p=>p.tasks.forEach(t=>{tState[t.id]={chk:false,st:'notstarted',note:'',asgn:''}}));
+}
+
+function showCaseUI(){
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('caseContent').style.display='block';
+  document.getElementById('casePanel').style.display='block';
+  document.getElementById('sumBar').style.display='block';
+}
+
+function confirmDeleteCase(){
+  if(!currentCaseId){ alert('案件が選択されていません'); return; }
+  const c = cases.find(x=>x['案件ID']===currentCaseId);
+  const name = c ? c['被相続人']||'（名前未入力）' : '（名前未入力）';
+  document.getElementById('deleteTargetName').textContent = name + ' 様 の案件';
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+async function executeDeleteCase(){
+  closeDelete();
+  if(!currentCaseId) return;
+  if(gasUrl){
+    setSyncStatus('ing','削除中...');
+    try {
+      await gasFetch('deleteCase', {id: currentCaseId});
+      setSyncStatus('ok','削除完了');
+    } catch(e){ setSyncStatus('err','削除失敗: '+e.message); }
+  }
+  // ローカルからも削除
+  localStorage.removeItem('case_'+currentCaseId);
+  cases = cases.filter(c=>c['案件ID']!==currentCaseId);
+  localStorage.setItem('cases_cache', JSON.stringify(cases));
+  currentCaseId = null;
+  isDirty = false;
+  document.getElementById('casePanel').style.display='none';
+  document.getElementById('sumBar').style.display='none';
+  document.getElementById('emptyState').style.display='block';
+  document.getElementById('caseContent').style.display='none';
+  document.getElementById('deleteCaseBtn').style.display='none';
+  renderCaseList();
+}
+
+// =============================================
+// SYNC SAVE
+// =============================================
+async function syncSave(){
+  if(!currentCaseId){ alert('案件を選択または新規作成してください'); return; }
+  const payload = buildPayload();
+
+  // ローカルに常に保存
+  localStorage.setItem('case_'+currentCaseId, JSON.stringify(payload));
+
+  // GASに送信
+  if(gasUrl){
+    setSyncStatus('ing','保存中...');
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '⏳ 保存中...';
+    try {
+      const result = await gasFetch('saveCase', {data: JSON.stringify(payload)});
+      // 案件一覧を更新
+      await loadCases();
+      setSyncStatus('ok','同期済み');
+      btn.textContent = '✓ 保存完了';
+      setTimeout(()=>btn.textContent='☁ 保存・同期',1500);
+      isDirty = false;
+      updateDirtyDisp();
+    } catch(e){
+      setSyncStatus('err','保存失敗: '+e.message);
+      btn.textContent = '☁ 保存・同期';
+    }
+  } else {
+    // ローカルのみ
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '✓ ローカル保存';
+    setTimeout(()=>btn.textContent='☁ 保存・同期',1500);
+    // ローカルキャッシュの案件一覧も更新
+    const existing = cases.findIndex(c=>c['案件ID']===currentCaseId);
+    const entry = {
+      '案件ID': currentCaseId,
+      '被相続人': payload.decedent,
+      '相続開始日': payload.deathDate,
+      '申告期限': calcDeadlineStr(payload.deathDate),
+      '担当税理士': payload.staffName,
+      '進捗(%)': calcProgress(),
+    };
+    if(existing>=0) cases[existing]=entry; else cases.push(entry);
+    localStorage.setItem('cases_cache', JSON.stringify(cases));
+    isDirty=false; updateDirtyDisp();
+    renderCaseList();
+  }
+}
+
+function buildPayload(){
+  return {
+    id: currentCaseId,
+    decedent: document.getElementById('decedent').value,
+    deathDate: document.getElementById('deathDate').value,
+    acceptDate: document.getElementById('acceptDate').value,
+    staffName: document.getElementById('staffName').value,
+    estVal: document.getElementById('estVal').value,
+    heirCnt: document.getElementById('heirCnt').value,
+    totalTax: document.getElementById('totalTax').value,
+    sp, nChild: +document.getElementById('n-child').value||0,
+    nParent: +document.getElementById('n-parent').value||0,
+    nSibling: +document.getElementById('n-sibling').value||0,
+    gStart: document.getElementById('gStart').value,
+    gEnd: document.getElementById('gEnd').value,
+    gBars, tState,
+    notes:[1,2,3,4,5,6].map(i=>document.getElementById('nt'+i)?.value||''),
+  };
+}
+
+function calcDeadlineStr(deathDate){
+  if(!deathDate) return '';
+  const d=new Date(deathDate); d.setMonth(d.getMonth()+10);
+  return d.toLocaleDateString('ja-JP');
+}
+function calcProgress(){
+  const all=Object.keys(tState); const done=all.filter(k=>tState[k].chk).length;
+  return all.length>0?Math.round(done/all.length*100):0;
+}
+
+// =============================================
+// DIRTY FLAG
+// =============================================
+function markDirty(){
+  isDirty=true;
+  updateDirtyDisp();
+}
+function updateDirtyDisp(){
+  const el=document.getElementById('dirtyDisp');
+  if(!el)return;
+  if(isDirty){ el.textContent='未保存あり ●'; el.style.color='#f39c12'; }
+  else { el.textContent='保存済み'; el.style.color='#2ecc71'; }
+}
+
+// =============================================
+// SPOUSE / HEIRS
+// =============================================
+function setSpouse(v){ sp=v; document.getElementById('tog-y').classList.toggle('on',v); document.getElementById('tog-n').classList.toggle('on',!v); updH();markDirty(); }
+
+function updH(){
+  const ch=+document.getElementById('n-child').value||0;
+  const hrP=document.getElementById('hr-parent');
+  const hrS=document.getElementById('hr-sibling');
+  if(ch>0){
+    hrP.classList.remove('vis');hrS.classList.remove('vis');
+    document.getElementById('n-parent').value=0;document.getElementById('n-sibling').value=0;
+  } else {
+    hrP.classList.add('vis');
+    const pa=+document.getElementById('n-parent').value||0;
+    if(pa>0){hrS.classList.remove('vis');document.getElementById('n-sibling').value=0;}
+    else hrS.classList.add('vis');
+  }
+  const ch2=+document.getElementById('n-child').value||0;
+  const pa2=+document.getElementById('n-parent').value||0;
+  const si2=+document.getElementById('n-sibling').value||0;
+  const total=(sp?1:0)+ch2+pa2+si2;
+  document.getElementById('heirCnt').value=total>0?total:'';
+  calcTax();
+}
+
+// =============================================
+// DATE CALC
+// =============================================
+function ds(dt){return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
+function addM(d,m){const r=new Date(d);r.setMonth(r.getMonth()+m);return r;}
+function fmtJ(d){return`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;}
+
+function calcDL(){
+  const dd=document.getElementById('deathDate').value;
+  if(!dd){['dlDisp','daysDisp','elapsedDisp','junDisp','abanDisp'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='—';});return;}
+  const d=new Date(dd),today=new Date();
+  const deadline=addM(d,10),junC=addM(d,4),aban=addM(d,3);
+  document.getElementById('dlDisp').textContent=fmtJ(deadline);
+  document.getElementById('junDisp').textContent=fmtJ(junC);
+  document.getElementById('abanDisp').textContent=fmtJ(aban);
+  const diff=Math.floor((deadline-today)/86400000);
+  const elapsed=Math.floor((today-d)/86400000);
+  document.getElementById('elapsedDisp').textContent=elapsed>=0?`${elapsed}日経過`:'—';
+  const el=document.getElementById('daysDisp');
+  if(diff<0){el.textContent=`期限超過 ${Math.abs(diff)}日`;el.className='si-val red';}
+  else if(diff<60){el.textContent=`残り${diff}日`;el.className='si-val red';}
+  else if(diff<120){el.textContent=`残り${diff}日`;el.className='si-val warn';}
+  else{el.textContent=`残り${diff}日`;el.className='si-val ok';}
+}
+
+// =============================================
+// TAX CALC
+// =============================================
+const txTbl=[
+  {lim:1000,r:.10,d:0},{lim:3000,r:.15,d:50},{lim:5000,r:.20,d:200},
+  {lim:10000,r:.30,d:700},{lim:20000,r:.40,d:1700},{lim:30000,r:.45,d:2700},
+  {lim:60000,r:.50,d:4200},{lim:Infinity,r:.55,d:7200}
+];
+function txFor(m){for(const r of txTbl){if(m<=r.lim)return Math.floor(m*r.r-r.d);}return 0;}
+
+function getShares(spP,ch,pa,si){
+  const s=[];
+  if(ch>0){ if(spP){s.push({n:'配偶者',f:1/2});for(let i=0;i<ch;i++)s.push({n:`子${i+1}`,f:(1/2)/ch});}else{for(let i=0;i<ch;i++)s.push({n:`子${i+1}`,f:1/ch});} }
+  else if(pa>0){ if(spP){s.push({n:'配偶者',f:2/3});for(let i=0;i<pa;i++)s.push({n:`親${i+1}`,f:(1/3)/pa});}else{for(let i=0;i<pa;i++)s.push({n:`親${i+1}`,f:1/pa});} }
+  else if(si>0){ if(spP){s.push({n:'配偶者',f:3/4});for(let i=0;i<si;i++)s.push({n:`兄弟姉妹${i+1}`,f:(1/4)/si});}else{for(let i=0;i<si;i++)s.push({n:`兄弟姉妹${i+1}`,f:1/si});} }
+  else if(spP) s.push({n:'配偶者（単独）',f:1});
+  return s;
+}
+function fracStr(v){const t=[[1,'全額'],[1/2,'1/2'],[1/3,'1/3'],[2/3,'2/3'],[1/4,'1/4'],[3/4,'3/4']];for(const[f,s]of t){if(Math.abs(v-f)<.0001)return s;}return(v*100).toFixed(1)+'%';}
+
+function calcTax(){
+  const est=parseFloat(document.getElementById('estVal').value)||0;
+  const ch=+document.getElementById('n-child').value||0;
+  const pa=+document.getElementById('n-parent').value||0;
+  const si=+document.getElementById('n-sibling').value||0;
+  const total=(sp?1:0)+ch+pa+si;
+  if(est<=0||total<=0){document.getElementById('totalTax').value='';document.getElementById('basicDed').value='';document.getElementById('taxNote').textContent='';lastTax=null;return;}
+  const bd=3000+600*total;
+  document.getElementById('basicDed').value=bd.toLocaleString();
+  if(est<=bd){document.getElementById('totalTax').value='0';document.getElementById('taxNote').textContent='遺産総額が基礎控除以下のため申告不要の可能性あり';lastTax={est,bd,taxable:0,total:0,shares:[],details:[],cnt:total};return;}
+  document.getElementById('taxNote').textContent='';
+  const taxable=est-bd;
+  const shares=getShares(sp,ch,pa,si);
+  let totalTax=0;
+  const details=shares.map(s=>{const portion=Math.floor(taxable*s.f);const tax=txFor(portion);totalTax+=tax;return{n:s.n,f:s.f,portion,tax};});
+  document.getElementById('totalTax').value=Math.floor(totalTax).toLocaleString();
+  lastTax={est,bd,taxable,total:Math.floor(totalTax),shares,details,cnt:total};
+}
+
+function showTax(){
+  calcTax();
+  if(!lastTax){alert('遺産総額・相続人情報を入力してください');return;}
+  const r=lastTax;
+  const rows=r.details.map(h=>`<tr><td>${h.n}</td><td>${fracStr(h.f)}</td><td>${Math.floor(h.portion).toLocaleString()}万円</td><td>${Math.floor(h.tax).toLocaleString()}万円</td></tr>`).join('');
+  document.getElementById('taxBreak').innerHTML=`<table><thead><tr><th>区分</th><th>法定相続分</th><th>取得金額</th><th>税額</th></tr></thead><tbody>
+    <tr><td colspan="2">遺産総額</td><td colspan="2">${r.est.toLocaleString()}万円</td></tr>
+    <tr><td colspan="2">基礎控除（3,000万＋600万×${r.cnt}人）</td><td colspan="2">${r.bd.toLocaleString()}万円</td></tr>
+    <tr><td colspan="2">課税遺産総額</td><td colspan="2">${r.taxable.toLocaleString()}万円</td></tr>
+    ${rows}<tr class="tr"><td colspan="3">相続税の総額（概算）</td><td>${r.total.toLocaleString()}万円</td></tr>
+  </tbody></table>`;
+  document.getElementById('taxMNote').textContent='※法定相続分で按分した速算表による概算です。配偶者の税額軽減・小規模宅地等の特例・生命保険非課税枠・生前贈与加算等は反映されていません。';
+  document.getElementById('taxModal').classList.add('open');
+}
+function closeTax(){document.getElementById('taxModal').classList.remove('open');}
+
+// =============================================
+// PROGRESS CARDS
+// =============================================
+function renderProg(){
+  document.getElementById('progGrid').innerHTML=phases.map(p=>{
+    const done=p.tasks.filter(t=>tState[t.id]&&tState[t.id].chk).length;
+    const pct=Math.round((done/p.tasks.length)*100);
+    return`<div class="pc" data-p="${p.id}" onclick="scrollToPhase(${p.id})">
+      <div class="pc-n">Phase ${p.id}</div><div class="pc-t">${p.name}</div>
+      <div class="pc-bar"><div class="pc-fill" style="width:${pct}%"></div></div>
+      <div class="pc-s"><span>${done}/${p.tasks.length} 完了</span><span>${pct}%</span></div>
+    </div>`;
+  }).join('');
+}
+
+// =============================================
+// CHECKLIST
+// =============================================
+function renderCL(){
+  document.getElementById('clContainer').innerHTML=phases.map(p=>{
+    const done=p.tasks.filter(t=>tState[t.id]&&tState[t.id].chk).length;
+    return`<div class="cl-sec" id="ps-${p.id}">
+      <div class="sec-hd"><div class="sec-badge" style="background:${p.color}">Phase ${p.id}</div><h2>${p.name}</h2><div class="sec-cnt">${done}/${p.tasks.length} 完了</div></div>
+      <table class="tt"><thead><tr><th style="width:30px;text-align:center;">✓</th><th style="width:22px"></th><th>タスク名</th><th style="width:98px;">目安期限</th><th style="width:80px;">ステータス</th><th style="width:70px;">担当</th><th>メモ</th></tr></thead>
+      <tbody>${p.tasks.map(t=>rowHTML(t)).join('')}</tbody></table>
+    </div>`;
+  }).join('');
+}
+
+function rowHTML(t){
+  const s=tState[t.id]||{chk:false,st:'notstarted',note:'',asgn:''};
+  const dl=dlMap[t.dl]||{l:'—',c:''};
+  const st=stOpts.find(x=>x.v===s.st)||stOpts[0];
+  return`<tr>
+    <td style="text-align:center;"><div class="chk ${s.chk?'on':''}" onclick="toggleChk('${t.id}')"></div></td>
+    <td><span class="pdot ${prMap[t.pr]||'pl'}"></span></td>
+    <td><div class="tn ${s.chk?'done':''}">${t.name}</div><div class="ts">${t.sub}</div></td>
+    <td><span class="dtag ${dl.c}">${dl.l}</span></td>
+    <td><span class="stag ${st.c}" onclick="cycSt('${t.id}')">${st.l}</span></td>
+    <td><input type="text" value="${s.asgn||''}" placeholder="—" style="border:none;border-bottom:1px solid var(--border);font-size:.7rem;width:100%;background:transparent;font-family:'Noto Sans JP',sans-serif;outline:none;padding:1px 3px;" onchange="updAsgn('${t.id}',this.value)"></td>
+    <td><input class="ti" type="text" value="${s.note||''}" placeholder="メモ..." onchange="updNote('${t.id}',this.value)"></td>
+  </tr>`;
+}
+
+function toggleChk(id){if(!tState[id])tState[id]={chk:false,st:'notstarted',note:'',asgn:''};tState[id].chk=!tState[id].chk;if(tState[id].chk)tState[id].st='done';renderCL();renderProg();markDirty();}
+function cycSt(id){if(!tState[id])tState[id]={chk:false,st:'notstarted',note:'',asgn:''};const v=stOpts.map(x=>x.v);const c=v.indexOf(tState[id].st);tState[id].st=v[(c+1)%v.length];tState[id].chk=tState[id].st==='done';renderCL();renderProg();markDirty();}
+function updNote(id,v){if(!tState[id])tState[id]={chk:false,st:'notstarted',note:'',asgn:''};tState[id].note=v;markDirty();}
+function updAsgn(id,v){if(!tState[id])tState[id]={chk:false,st:'notstarted',note:'',asgn:''};tState[id].asgn=v;markDirty();}
+function scrollToPhase(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
+  document.querySelector('[data-tab="checklist"]').classList.add('active');
+  document.getElementById('tab-checklist').classList.add('active');
+  setTimeout(()=>{const e=document.getElementById('ps-'+id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},50);
+}
+
+// =============================================
+// GANTT
+// =============================================
+function updateWC(){
+  const s=new Date(document.getElementById('gStart').value),e=new Date(document.getElementById('gEnd').value);
+  if(!s||!e||isNaN(s)||isNaN(e))return;
+  const w=Math.round((e-s)/604800000);
+  document.getElementById('wcLabel').textContent=`（${w}週間 / 約${(w/4.33).toFixed(1)}ヶ月）`;
+}
+
+function ganttToDeadline(){
+  const dd=document.getElementById('deathDate').value;
+  const acc=document.getElementById('acceptDate').value;
+  const base=acc||dd;
+  const sdt=base?new Date(base):new Date();
+  const edt=addM(sdt,10);
+  document.getElementById('gStart').value=ds(sdt);
+  document.getElementById('gEnd').value=ds(edt);
+  const tms=edt-sdt;
+  defSpans.forEach(b=>{
+    if(!gBars[b.pid]){
+      gBars[b.pid]={s:ds(new Date(sdt.getTime()+tms*b.fs)),e:ds(new Date(sdt.getTime()+tms*b.fe))};
+    }
+  });
+  updateWC();renderGantt();
+}
+
+function renderGantt(){
+  const sStr=document.getElementById('gStart').value,eStr=document.getElementById('gEnd').value;
+  if(!sStr||!eStr)return;
+  const vS=new Date(sStr),vE=new Date(eStr);
+  if(vE<=vS)return;
+  const tms=vE-vS,today=new Date();
+  const months=[];
+  const cur=new Date(vS.getFullYear(),vS.getMonth(),1);
+  while(cur<=vE){months.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
+  let html=`<table class="gt"><thead><tr><th class="tth">フェーズ</th>${months.map(m=>`<th>${m.getFullYear()}.${String(m.getMonth()+1).padStart(2,'0')}</th>`).join('')}</tr></thead><tbody>`;
+  phases.forEach(p=>{
+    const bar=gBars[p.id]||{s:sStr,e:eStr};
+    const bS=new Date(bar.s),bE=new Date(bar.e);
+    const done=p.tasks.filter(t=>tState[t.id]&&tState[t.id].chk).length;
+    const pct=Math.round((done/p.tasks.length)*100);
+    html+=`<tr class="pr"><td class="ttd" style="color:${p.color};font-weight:700;">Phase ${p.id} — ${p.name} <span style="font-size:.6rem;color:var(--muted);margin-left:4px;">${pct}%</span></td>
+      ${months.map(m=>{
+        const mS=new Date(m.getFullYear(),m.getMonth(),1),mE=new Date(m.getFullYear(),m.getMonth()+1,0,23,59,59);
+        const overlap=bS<=mE&&bE>=mS;
+        const todayIn=today>=mS&&today<=mE;
+        const tPct=((today-mS)/(mE-mS+1))*100;
+        const bL=Math.max(0,Math.min(100,((Math.max(bS,mS)-mS)/(mE-mS+1))*100));
+        const bR=Math.max(0,Math.min(100,((Math.min(bE,mE)-mS)/(mE-mS+1))*100));
+        return`<td style="position:relative;">${overlap?`<div class="gbar" style="left:${bL}%;width:${bR-bL}%;background:${p.color};" onclick="openBar(${p.id})" title="クリックして期間を編集"></div>`:''} ${todayIn?`<div style="position:absolute;top:0;bottom:0;left:${tPct}%;width:2px;background:rgba(192,57,43,.35);z-index:5;pointer-events:none;"></div>`:''}</td>`;
+      }).join('')}</tr>`;
+    html+=`<tr class="mr"><td class="ttd" style="font-size:.66rem;color:var(--muted);">✦ Phase ${p.id} 完了目安 : ${bar.e}</td>
+      ${months.map(m=>{
+        const mS=new Date(m.getFullYear(),m.getMonth(),1),mE=new Date(m.getFullYear(),m.getMonth()+1,0,23,59,59);
+        const inM=bE>=mS&&bE<=mE;const mpct=inM?((bE-mS)/(mE-mS+1))*100:0;
+        return`<td style="position:relative;">${inM?`<div class="gdm" style="left:${mpct}%;margin-left:-5px;"></div>`:''}</td>`;
+      }).join('')}</tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('ganttCont').innerHTML=html;
+}
+
+function openBar(pid){
+  editPid=pid;
+  const b=gBars[pid]||{};
+  document.getElementById('beS').value=b.s||document.getElementById('gStart').value;
+  document.getElementById('beE').value=b.e||document.getElementById('gEnd').value;
+  const p=phases.find(x=>x.id===pid);
+  document.getElementById('beTitle').textContent=`Phase ${pid}「${p.name}」の期間を編集`;
+  document.getElementById('barEd').style.display='block';
+}
+function applyBar(){if(!editPid)return;gBars[editPid]={s:document.getElementById('beS').value,e:document.getElementById('beE').value};markDirty();renderGantt();}
+function closeBar(){document.getElementById('barEd').style.display='none';editPid=null;}
+
+// =============================================
+// EXCEL OUTPUT
+// =============================================
+function exportExcel(){
+  if(!currentCaseId){alert('案件を開いてください');return;}
+  const wb=XLSX.utils.book_new();
+  const decedent=document.getElementById('decedent').value||'';
+  const dlMap2={asap:'速やかに',month1:'1ヶ月以内',month3:'3ヶ月目安',month6:'6ヶ月目安',month10:'申告期限'};
+  const prMap2={high:'高',med:'中',low:'低'};
+  const stMap2={notstarted:'未着手',inprogress:'進行中',waiting:'待ち',done:'完了'};
+  const summaryData=[
+    ['相続税申告 工程管理チャート'],[],
+    ['被相続人',decedent],['相続開始日',document.getElementById('deathDate').value],
+    ['受任日',document.getElementById('acceptDate').value],['担当税理士',document.getElementById('staffName').value],
+    ['法定相続人数',document.getElementById('heirCnt').value+'名'],
+    ['遺産総額',document.getElementById('estVal').value+'万円'],
+    ['基礎控除額',document.getElementById('basicDed').value+'万円'],
+    ['相続税総額（概算）',document.getElementById('totalTax').value+'万円'],
+    ['申告期限',document.getElementById('dlDisp').textContent],
+    ['残日数',document.getElementById('daysDisp').textContent],
+  ];
+  const ws1=XLSX.utils.aoa_to_sheet(summaryData);ws1['!cols']=[{wch:20},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws1,'案件サマリー');
+  const clRows=[['フェーズ','No','タスク名','詳細','目安期限','優先度','ステータス','担当','メモ']];
+  phases.forEach(p=>{p.tasks.forEach(t=>{const s=tState[t.id]||{};clRows.push(['Phase '+p.id+' '+p.name,t.id,t.name,t.sub,dlMap2[t.dl]||'',prMap2[t.pr]||'',stMap2[s.st]||'未着手',s.asgn||'',s.note||'']);});});
+  const ws2=XLSX.utils.aoa_to_sheet(clRows);ws2['!cols']=[{wch:22},{wch:7},{wch:28},{wch:38},{wch:12},{wch:6},{wch:8},{wch:8},{wch:28}];
+  XLSX.utils.book_append_sheet(wb,ws2,'チェックリスト');
+  if(lastTax){
+    const taxRows=[['相続税額 概算計算'],[],['区分','法定相続分','取得金額（万円）','税額（万円）'],['遺産総額','',lastTax.est,''],['基礎控除額','',lastTax.bd,''],['課税遺産総額','',lastTax.taxable,'']];
+    lastTax.details.forEach(h=>taxRows.push([h.n,(h.f*100).toFixed(1)+'%',Math.floor(h.portion),Math.floor(h.tax)]));
+    taxRows.push(['相続税の総額（概算）','','',lastTax.total]);
+    const ws3=XLSX.utils.aoa_to_sheet(taxRows);ws3['!cols']=[{wch:36},{wch:12},{wch:16},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ws3,'相続税概算');
+  }
+  const fname=(decedent?decedent+'_':'')+'相続税申告工程管理.xlsx';
+  XLSX.writeFile(wb,fname);
+}
+
+// =============================================
+// MODALS
+// =============================================
+function showSetup(){
+  document.getElementById('setupUrl').value=gasUrl;
+  document.getElementById('setupModal').classList.add('open');
+}
+function closeSetup(){document.getElementById('setupModal').classList.remove('open');}
+function closeDelete(){document.getElementById('deleteModal').classList.remove('open');}
+
+// =============================================
+// BOOT
+// =============================================
+init();
+</script>
+</body>
+</html>
